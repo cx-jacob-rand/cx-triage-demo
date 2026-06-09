@@ -1,6 +1,7 @@
 # Jinja2 template filters
 from jinja2 import contextfilter
 from datetime import datetime
+from markupsafe import escape
 import hashlib
 
 @contextfilter
@@ -60,12 +61,14 @@ def format_file_size(context, size_bytes):
 
 @contextfilter
 def role_badge(context, role):
-    """Generate role badge HTML"""
+    """Generate role badge HTML with proper XSS protection"""
     role_colors = {
         'admin': 'danger',
         'project_manager': 'primary',
         'team_member': 'secondary'
     }
+    # Escape the role value to prevent XSS attacks
+    safe_role = escape(role)
     color = role_colors.get(role, 'secondary')
-    return f'<span class="badge badge-{color}">{role}</span>'
+    return f'<span class="badge badge-{color}">{safe_role}</span>'
 

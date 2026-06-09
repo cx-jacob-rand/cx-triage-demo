@@ -7,6 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
+from markupsafe import escape
 from config import Config
 from models import db, User, Project, Task
 from database import init_db
@@ -138,8 +139,22 @@ def admin_dashboard():
     projects = Project.query.all()
     tasks = Task.query.all()
 
+    # Sanitize user data to prevent XSS attacks
+    # Escape user-controlled fields that could contain malicious HTML/JavaScript
+    sanitized_users = []
+    for user in users:
+        sanitized_user = type('obj', (object,), {
+            'id': user.id,
+            'username': escape(user.username) if user.username else '',
+            'email': escape(user.email) if user.email else '',
+            'role': escape(user.role) if user.role else '',
+            'created_at': user.created_at,
+            'last_login': user.last_login
+        })()
+        sanitized_users.append(sanitized_user)
+
     return render_template('admin.html',
-                         users=users,
+                         users=sanitized_users,
                          projects=projects,
                          tasks=tasks,
                          request_id=request_id)

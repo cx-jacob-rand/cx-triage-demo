@@ -129,13 +129,14 @@ def search_messages():
     if not query:
         return jsonify({'error': 'Search query required'}), 400
     
-    from sqlalchemy import text
-    sql_query = f"SELECT * FROM messages WHERE content LIKE '%{query}%' OR subject LIKE '%{query}%'"
-    result = db.session.execute(text(sql_query))
-    messages = [dict(row) for row in result]
-    
+    # Use SQLAlchemy ORM with parameterized LIKE filters to prevent SQL injection
+    messages = Message.query.filter(
+        Message.content.like(f'%{query}%') |
+        Message.subject.like(f'%{query}%')
+    ).all()
+
     return jsonify({
         'query': query,
-        'results': messages
+        'results': [m.to_dict() for m in messages]
     })
 
